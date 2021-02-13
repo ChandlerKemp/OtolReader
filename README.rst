@@ -59,11 +59,14 @@ InternalTransferNetworkScripts
 A directory of modules for creating and using classification neural networks.
 
 1DTrainingArrayMaker.py
-    A script used to generate a training array. The script process samples from SampleDatabase to create to generate synthetic samples, process them into 151 element vectors, and store all of them in a single array.
+***********************
+A script used to generate a training array. The script process samples from SampleDatabase to create to generate synthetic samples, process them into 151 element vectors, and store all of them in a single array.
 
 ClassificationNetworkMarkScoreTable.py
-    A script that iterates through models generated for cross validation and calculates the accuracy of
-    classifications for each fold.
+**************************************
+A script that iterates through models generated for cross validation and calculates the accuracy of
+classifications for each fold.
 
 TwoNetworkTesting.py
-    A script used to train a selection and classicification array for cross validation.
+********************
+A script used to train a selection and classicification array for cross validation.
