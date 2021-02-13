@@ -29,6 +29,7 @@ training = [[] for i in range(n_img*len(mark_list))]
 training_labels = np.zeros(n_img * len(mark_list), dtype=int)
 training_array = None  # "SavedTrainingArrays/training_aug_rot10height02flip_40.p"
 
+
 def im_proc(mark_type, im_ind):
     training = []
     # print("Currently evaluating image", im_ind, "mark", mark_type)
