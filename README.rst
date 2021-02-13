@@ -4,7 +4,9 @@ OtolReader v1.0
 
 Introduction:
 -------------
-OtolReader is a package that supports automated classification of hatchery marks in salmon otoliths. The package provides a Jupyter Notebook-based utility that allows a human to easily extract marked subsamples from an otolith image. These samples can be stored in a local directory. The samples can then be used to train a machine learning algorithm for otolith classification. The software automatically processes the samples to generate a list of 151 numbers summarizing each sample. The set of all sample summary vectors are then used to train a neural network to implement the classification.
+OtolReader supports automated classification of hatchery marks in salmon otoliths. The package provides a Jupyter Notebook-based utility that allows a human to easily extract marked subsamples from an otolith image. These samples can be stored in a local directory. The samples can then be used to train a machine learning algorithm for otolith classification. The software automatically processes the samples to generate a list of 151 numbers summarizing each sample. The set of all sample summary vectors are then used to train a neural network to implement the classification.
+
+
 
 OtolithAnalysis--is a package that stores otolith processing utilities.
     feature_functions--stores several otolith-specific image processing functions that can be used by higher-level algorithms. These functions include:
