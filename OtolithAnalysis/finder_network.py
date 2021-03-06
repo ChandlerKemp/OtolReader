@@ -47,25 +47,29 @@ def finder(img_in, model, angles=[0], shape=None, percentile=99, x_step=120, y_s
     return maxscores
 
 
-def fcn_smoothed_d2ydx2(s, stepsize=10, avg_window=20, saveind_step=5):
+def fcn_smoothed_d2ydx2(s, stepsize=10, avg_window=20, saveind_step=5, xz=None, inds=None):
     """
     computes the smoothed second derivative of s after collapsing to one dimension 0
     :param s: input array
     :param stepsize: step size to use in computing the second derivative
     :param avg_window: window size to use in applying moving average
     :param saveind_step: stepsize between saved indexes. For example, saveind_step=5 implies saving indexes 0, 5, 10,...
+    :param xz: optional input array of indexes
+    :param inds: if specified, saveind_step is overridden and indexes in this array are saved.
     :return d2ydx2: the smoothed second derivative
     """
     # Note! the -1 here is a relic from early iterations of this function
-    n_steps = int((s.shape[0] - 2 * stepsize - avg_window + 1)/saveind_step) - 1
-    inds = np.linspace(0, n_steps-1, n_steps, dtype=int) * saveind_step
-    xz = np.linspace(0, len(s)-1, len(s), dtype=int)
+    if inds is None:
+        n_steps = int((s.shape[0] - 2 * stepsize - avg_window + 1)/saveind_step) - 1
+        inds = np.linspace(0, n_steps-1, n_steps, dtype=int) * saveind_step
+    if xz is None:
+        xz = np.linspace(0, len(s)-1, len(s), dtype=int)
     coeffs = np.polyfit(xz[:len(s)], np.mean(s, 1), deg=1)
     sout = np.zeros(s.shape)
     for ind in range(s.shape[1]):
         sout[:, ind] = s[:, ind] - coeffs[1] - coeffs[0] * xz[:s.shape[0]]
     sout = sout / np.std(sout) * 20
     sout = np.mean(sout, 1)
-    d2ydx2 = sout[:-stepsize * 2] + sout[stepsize * 2:] - 2 * sout[stepsize:-stepsize]
-    d2ydx2 = np.convolve(d2ydx2, np.ones(avg_window) / avg_window, mode='valid')
-    return d2ydx2[inds]
+    sout = sout[:-stepsize * 2] + sout[stepsize * 2:] - 2 * sout[stepsize:-stepsize]
+    sout = np.convolve(sout, np.ones(avg_window) / avg_window, mode='valid')
+    return sout[inds]
