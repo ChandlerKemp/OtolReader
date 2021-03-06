@@ -14,6 +14,7 @@ import numpy as np
 from tensorflow import keras
 import tensorflow as tf
 import argparse
+import otolreader
 
 np.random.seed(1)
 n_cvfolds = 10

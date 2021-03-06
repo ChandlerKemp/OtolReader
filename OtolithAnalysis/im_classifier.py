@@ -7,7 +7,7 @@ import numpy as np
 import sys
 import cv2 as cv
 from . import feature_functions, finder_network
-from OtolReader.InternalTransferNetworkTraining.classification_network_mark_score_table import net_score_fcn, \
+from otolreader.InternalTransferNetworkTraining.classification_network_mark_score_table import net_score_fcn, \
     find_samples
 
 

@@ -5,8 +5,8 @@ import os
 import pickle
 import cv2 as cv
 import imutils
-from OtolReader import OtolithAnalysis as oa
-from OtolReader.OtolithAnalysis.feature_functions import high_low
+from otolreader import OtolithAnalysis as oa
+from otolreader.OtolithAnalysis.feature_functions import high_low
 
 
 def fcn_mark_im_ind(im_ind_raw, n_img=30):

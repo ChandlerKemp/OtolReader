@@ -4,7 +4,7 @@ import numpy as np
 from joblib import Parallel, delayed
 import os
 import pickle
-import OtolReader.OtolithAnalysis as oa
+import otolreader.OtolithAnalysis as oa
 
 
 def im_proc(mark_type, im_ind, generator, pdir, stepsize, avg_window, ngen, inds, xz, max_s_per_im):

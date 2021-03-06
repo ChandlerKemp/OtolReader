@@ -2,7 +2,7 @@ import pickle
 import numpy as np
 import multiprocessing
 import os
-from OtolReader.InternalTransferNetworkTraining import classification_network_mark_score_table as cnmst
+from otolreader.InternalTransferNetworkTraining import classification_network_mark_score_table as cnmst
 
 # ----------------------------------------------Constants--------------------------
 n_img = 30  # Number of images per class
