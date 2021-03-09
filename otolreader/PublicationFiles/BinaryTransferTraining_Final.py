@@ -1,8 +1,6 @@
 import os
 import pickle
 import numpy as np
-import sys
-sys.path.append('../../')
 import otolreader as otolr
 
 basedir = '../../OtolReader-Publication/Models'
