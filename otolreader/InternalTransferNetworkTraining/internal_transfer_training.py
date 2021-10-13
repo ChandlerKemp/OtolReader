@@ -80,13 +80,20 @@ def make_trained_transfer_nets(pdir, model_prefix, nim_fold, sampledir, samps_pr
     """
     fmod_name_base = os.path.join(pdir, model_prefix)
     tf.config.run_functions_eagerly(True)
-    for fold_ind in range(10):
+    if nim_fold == 0:
+        n_fold = 1
+    else:
+        n_fold = int(cvorder / nim_fold)
+    for fold_ind in range(n_fold):
         print("Currently evaluating fold number {}".format(fold_ind))
         mod = keras.models.load_model(fmod_name_base + str(fold_ind) + '.h5', compile=False)
         temp_model = make_transfer_module(mod)
         tr, tr_labs, train_array = make_train_array(fold_ind, nim_fold, sampledir, samps_prefix, cvorder)
+        # tr consists of samples selected by the classification network
+        # we now pad those samples so that half of the total samples are unmarked
         while np.mean(tr_labs) > 0.5:
             none_im_ind = np.random.randint(0, 30)
+            # This makes sure that none samples are not drawn from the validation set
             while none_im_ind + 60 in cvorder[fold_ind * nim_fold:(fold_ind + 1) * nim_fold]:
                 none_im_ind = np.random.randint(0, 30)
             tr_ind = np.where(cvorder == none_im_ind + 60)[0][0]

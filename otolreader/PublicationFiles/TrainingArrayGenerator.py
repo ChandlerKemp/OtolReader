@@ -1,4 +1,4 @@
-OtolReader import InternalTransferNetworkTraining as itnt
+from otolreader import InternalTransferNetworkTraining as itnt
 import pickle
 import os
 

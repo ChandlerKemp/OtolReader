@@ -76,7 +76,7 @@ def mark_prob(smd2ydx2, model_in):
     return 1 - model_in.predict(np.expand_dims(np.expand_dims(smd2ydx2, axis=0), axis=2))[0, 2]
 
 
-def find_marks(fname_base, fold_ind, imorder, im_dir, mark_list, ang, model_in_len, max_im_ind, dirout):
+def find_marks(fname_base, fold_ind, imorder, im_dir, mark_list, ang, model_in_len, dirout, n_img_per_class):
     """
     Iterates through all images and provides mark-unmarked scores and locations. Also extracts 1D reductions of
     samples likely to contain marks. Saves the score table, scores and samples to files in dir_out.
@@ -95,11 +95,11 @@ def find_marks(fname_base, fold_ind, imorder, im_dir, mark_list, ang, model_in_l
     fname = fname_base + str(fold_ind) + '.h5'
     model = keras.models.load_model(fname, compile=False)
 
-    for im_ind in range(0, max_im_ind):
+    for im_ind in range(0, len(imorder)):
         # iterate over all images and identify likely mark samples:
         print('fold: {:0.0f}, image: {:0.0f}'.format(fold_ind, im_ind), flush=True)
         im_lab = imorder[im_ind]
-        mark_ind, im_file_ind = fcn_mark_im_ind(im_lab)
+        mark_ind, im_file_ind = fcn_mark_im_ind(im_lab, n_img=n_img_per_class)
         fname = os.path.join(im_dir, mark_list[mark_ind], str(im_file_ind) + '.jpg')
         img = cv.imread(fname, cv.IMREAD_GRAYSCALE)
         st = find_samples(img, net_score_fcn, 99.9, model, angles=ang)

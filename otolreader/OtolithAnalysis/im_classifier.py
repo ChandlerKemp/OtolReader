@@ -34,7 +34,7 @@ def classify_image(image_path, classification_model, binary_model, binary_thresh
     return mark_list[yhatclass]
 
 
-def find_marks(image_path, classification_model, ang=np.linspace(-90, 90, 9), model_in_len=151):
+def find_marks(image_path, classification_model, ang=np.linspace(-90, 90, 9), model_in_len=151, print_status=True):
     """
     Locates likely mark samples within an image. Also extracts 1D reductions of
     samples likely to contain marks. Returns the score table, scores and samples.
@@ -43,8 +43,11 @@ def find_marks(image_path, classification_model, ang=np.linspace(-90, 90, 9), mo
     :param ang: the list of rotation angles to consider
     :param model_in_len: the length of 1D arrays used to train the classification array
     """
+    if print_status:
+        print("currently evaluating image at " + image_path)
     img = cv.imread(image_path, cv.IMREAD_GRAYSCALE)
-
+    if img is None:
+        raise TypeError("Image not found at " + image_path)
     st = find_samples(img, net_score_fcn, 99.9, classification_model, angles=ang)
     samps = feature_functions.extract_samples_3(img, st, [800, 240])
     smoothed_samples = np.zeros([len(samps), model_in_len])
