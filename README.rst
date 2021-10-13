@@ -15,7 +15,7 @@ Steps to running a cross validation test:
 3.) Upload training arrays to AWS S3 account
 
 4.) Generate and train classification and binary models using the
-INternalTransferNetworkTraining/InternalTransferNetwork.ipynb notebook on AWS Sagemaker. The notebook calls the
+InternalTransferNetworkTraining/InternalTransferNetwork.ipynb notebook on AWS Sagemaker. The notebook calls the
 InternalTransferNetworkTraining/TransferNetworkTraining.py module.
 
 5.) Download the models from S3
@@ -93,6 +93,7 @@ TwoNetworkTesting.py
 ********************
 A script used to train a selection and classification network for cross validation.
 
-Steps to generating results for publication:
---------------------------------------------
-Use the notebook TrainingDatabaseMaker.ipynb to generate training samples
+Summary of publication files:
+-----------------------------
+All models and results documented in the publication "Determining salmon provenance with automated otolith reading"
+were generated using the scripts in the otolreader/PublicationFiles directory.
