@@ -70,21 +70,21 @@ def results_sorter(dir_in, dir_out):
         pickle.dump(samples, f)
 # ----------------------------------------Analysis------------------------
 if __name__ == '__main__':
-    # with multiprocessing.Pool(processes=10) as pool:
-    #     pool.map(sctable_entry, range(n_img * len(mark_list_in)))
-    #
-    # results_sorter('temp', pdir)
-    #
-    # with multiprocessing.Pool(processes=10) as pool:
-    #     pool.map(sctable_entry_train, range(n_img_train * len(mark_list_in)))
-    #
+    with multiprocessing.Pool(processes=10) as pool:
+        pool.map(sctable_entry, range(n_img * len(mark_list_in)))
+
+    results_sorter('temp', pdir)
+
+    with multiprocessing.Pool(processes=10) as pool:
+        pool.map(sctable_entry_train, range(n_img_train * len(mark_list_in)))
+
     retrain_dir = os.path.join(pdir, 'retrain samples')
-    # if not os.path.isdir(retrain_dir):
-    #     os.mkdir(retrain_dir)
-    # results_sorter('temp_train', retrain_dir)
-    #
-    # if not os.path.isdir(retrained_dirout):
-    #     os.mkdir(retrained_dirout)
+    if not os.path.isdir(retrain_dir):
+        os.mkdir(retrain_dir)
+    results_sorter('temp_train', retrain_dir)
+
+    if not os.path.isdir(retrained_dirout):
+        os.mkdir(retrained_dirout)
     imorder = np.linspace(0, n_img_train * len(mark_list_in) - 1, n_img_train * len(mark_list_in), dtype=int)
     otolreader.InternalTransferNetworkTraining.internal_transfer_training.make_trained_transfer_nets(
         pdir, binary_model_prefix, nim_fold, retrain_dir, 'samples_', imorder, retrained_dirout
