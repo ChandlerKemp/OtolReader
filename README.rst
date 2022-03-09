@@ -6,6 +6,28 @@ Introduction:
 -------------
 OtolReader supports automated classification of hatchery marks in salmon otoliths. The package provides a Jupyter Notebook-based utility that allows a human to easily extract marked subsamples from an otolith image. These samples can be stored in a local directory. The samples can then be used to train a machine learning algorithm for otolith classification. The software automatically processes the samples to generate a list of 151 numbers summarizing each sample. The set of all sample summary vectors are then used to train a neural network to implement the classification.
 
+Steps to running a cross validation test:
+-----------------------------------------
+1.) Generate a database of training samples using the TrainingDatabaseMaker.ipynb notebook
+
+2.) Generate training arrays using the samples with the PublicationFiles/TrainingArrayGenerator.py script
+
+3.) Upload training arrays to AWS S3 account
+
+4.) Generate and train classification and binary models using the
+InternalTransferNetworkTraining/InternalTransferNetwork-TrainingCrossVal.ipynb notebook on AWS Sagemaker. The notebook calls the
+InternalTransferNetworkTraining/TransferNetworkTraining.py module.
+
+5.) Download the models from S3
+
+6.) Run the PublicationFiles/ClassificationNetworkSampleSelection.py script to identify samples for the second round
+of training of the binary network. Running this with 150 images and ten folds took three full days.
+
+7.) Use the PublicationFiles/BinaryTransferTraining notebook to retrain the top layer of the binary networks and save
+the resulting models.
+
+8.) Use the PublicationFiles/CrossValProcessing.ipynb notebook to explore the performance of the cross validation
+models.
 
 File structure:
 ---------------
@@ -69,4 +91,9 @@ classifications for each fold.
 
 TwoNetworkTesting.py
 ********************
-A script used to train a selection and classicification array for cross validation.
+A script used to train a selection and classification network for cross validation.
+
+Summary of publication files:
+-----------------------------
+All models and results documented in the publication "Determining salmon provenance with automated otolith reading"
+were generated using the scripts in the otolreader/PublicationFiles directory.

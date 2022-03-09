@@ -1,7 +1,10 @@
 #!/usr/bin/env python3.6
 
-# This script is designed to train set of classification networks that are also used to select samples,
+# This script can be executed in an AWS Sagemaker instance.
+# The script generates and trains a set of classification networks,
 # as well as a second set of networks to distinguish between marked and unmarked samples
+# The classification networks include a "None" class. The classification network should
+# be used to select additional samples to further train the binary network.
 # The two sets of networks can then be used for cross validation.
 from __future__ import print_function
 
@@ -31,7 +34,8 @@ if __name__ =='__main__':
 
     # input data and model directories
     parser.add_argument('--model_dir', type=str, default=os.environ.get('SM_MODEL_DIR'))
-#    parser.add_argument('--model_dir', type=str)
+
+    # parser.add_argument('--model_dir', type=str)
     parser.add_argument('--train', type=str, default=os.environ.get('SM_CHANNEL_TRAIN'))
     parser.add_argument('--test', type=str, default=os.environ.get('SM_CHANNEL_TEST'))
 
@@ -53,30 +57,7 @@ channel_name = 'training'
 training_path = os.path.join(input_path, channel_name)
 
 
-def classification_model_trainer(input_files, mark_list, n_img):
-    train_y = np.zeros(n_img * len(mark_list), dtype=int)
-    for fpath in input_files:
-        if 'aug_rot10' in fpath:
-            break
-    with open(fpath, 'rb') as f:
-        print('---------------------', fpath)
-        training_temp = pickle.load(f)
-    train_X = []
-    for mark_count in range(len(mark_list)):
-        for im_ind in range(0, n_img):
-            train_X.append(training_temp[mark_count * int(len(training_temp) / len(mark_list)) + im_ind])
-            train_y[mark_count * n_img + im_ind] = mark_count
-    train_X = np.array(train_X)
-    train_y = np.array(train_y, dtype=int)
-    tr = []
-    tr_labs = []
-    for im_ind in range(len(train_X)):
-        tr.extend(train_X[im_ind])
-        tr_labs.extend([train_y[im_ind], ] * len(train_X[im_ind]))
-    tr = np.array(tr)
-    tr_labs = np.array(tr_labs, dtype=int)
-    tr = np.expand_dims(tr, axis=2)
-    print('tr shape:', tr.shape)     
+def classification_model_init(tr):
     # ------------------ Initialize the model ----------------------------------
     model = keras.Sequential([
         keras.layers.Conv1D(256, 3, activation=tf.nn.relu, input_shape=tr.shape[1:]),
@@ -90,48 +71,10 @@ def classification_model_trainer(input_files, mark_list, n_img):
         loss='sparse_categorical_crossentropy',
         metrics=['accuracy']
     )
-    # Here we only support a single hyperparameter. Note that hyperparameters are always passed in as
-    # strings, so we need to do any necessary conversions.
-    # max_leaf_nodes = trainingParams.get('max_leaf_nodes', None)
-    # if max_leaf_nodes is not None:
-    #     max_leaf_nodes = int(max_leaf_nodes)
+    return model
 
-    model.fit(tr, tr_labs, epochs=10, verbose=0)
 
-    # save the model
-    # tf.contrib.saved_model.save_keras_model(model, args.model_dir)
-    model.save(os.path.join(model_path, 'classnet_fulltraining.h5'))
-    print('Training complete.')
-    
-    
-def binary_model_trainer(input_files, mark_list, n_img):
-    train_y = np.zeros(n_img * len(mark_list) + n_img, dtype=int)
-    train_X = []
-    for fpath in input_files:
-        if 'aug_rot10' in fpath:
-            with open(fpath, 'rb') as f:
-                training_temp = pickle.load(f)
-            for mark_count in range(len(mark_list)):
-                for im_ind in range(0, n_img):
-                    train_X.append(training_temp[mark_count * int(len(training_temp) / len(mark_list)) + im_ind])
-                    if mark_count != 2:
-                        train_y[mark_count * n_img + im_ind] = 1
-        elif 'extra_none_samples' in fpath:
-            with open(fpath, 'rb') as f:
-                training_temp = pickle.load(f)
-            train_X.append(training_temp[:1600])
-    train_X = np.array(train_X)
-    train_y = np.array(train_y, dtype=int)
-    tr = []
-    tr_labs = []
-    for im_ind in range(len(train_X)):
-        tr.extend(train_X[im_ind])
-        tr_labs.extend([train_y[im_ind], ] * len(train_X[im_ind]))
-    tr = np.array(tr)
-    tr_labs = np.array(tr_labs, dtype=int)
-    tr = np.expand_dims(tr, axis=2)
-    print('tr shape:', tr.shape)     
-    # ------------------ Initialize the model ----------------------------------
+def binary_model_init(tr):
     model = keras.Sequential([
         keras.layers.Conv1D(256, 3, activation=tf.nn.relu, input_shape=tr.shape[1:]),
         keras.layers.Conv1D(128, 9, activation=tf.nn.relu),
@@ -144,17 +87,89 @@ def binary_model_trainer(input_files, mark_list, n_img):
         loss='sparse_categorical_crossentropy',
         metrics=['accuracy']
     )
-    # Here we only support a single hyperparameter. Note that hyperparameters are always passed in as
-    # strings, so we need to do any necessary conversions.
-    # max_leaf_nodes = trainingParams.get('max_leaf_nodes', None)
-    # if max_leaf_nodes is not None:
-    #     max_leaf_nodes = int(max_leaf_nodes)
+    return model
 
-    model.fit(tr, tr_labs, epochs=10, verbose=0)
 
-    # save the model
-    # tf.contrib.saved_model.save_keras_model(model, args.model_dir)
-    model.save(os.path.join(model_path, 'binarynet_fulltraining.h5'))
+def classification_model_trainer(training_array_path, n_cvfolds, n_img, cv_order):
+    with open(training_array_path, 'rb') as f:
+        print('---------------------Training file name: ', training_array_path)
+        training_temp = pickle.load(f)
+    train_y = []
+    train_X = []
+    mark_count = 0
+    for mark, samps in training_temp.items():
+        for im_samps in samps:
+            train_X.append(im_samps)
+            train_y.append(mark_count)
+        mark_count += 1
+    train_X = np.array(train_X)
+    train_y = np.array(train_y, dtype=int)
+    for cvind in range(n_cvfolds):
+        nims_fold = int(len(train_X) / n_cvfolds)
+        foldinds = cv_order[cvind * nims_fold:(cvind + 1) * nims_fold]
+        tr = []
+        tr_labs = []
+        for im_ind in range(len(train_X)):
+            if im_ind in foldinds:
+                continue
+            tr.extend(train_X[im_ind])
+            tr_labs.extend([train_y[im_ind], ] * len(train_X[im_ind]))
+        tr = np.array(tr)
+        tr_labs = np.array(tr_labs, dtype=int)
+        tr = np.expand_dims(tr, axis=2)
+        print('tr shape:', tr.shape)
+
+        # ------------------ Initialize the model ----------------------------------
+        model = classification_model_init(tr)
+
+        history = model.fit(tr, tr_labs, epochs=10, verbose=0)
+
+        # save the model
+        # tf.contrib.saved_model.save_keras_model(model, args.model_dir)
+        model.save(os.path.join(model_path, 'classnet_' + str(cvind) + '.h5'))
+        with open(os.path.join(model_path, 'classhist_' + str(cvind) + '.h5'), 'wb') as f:
+            pickle.dump(history.history, f)
+    print('Training complete.')
+    
+    
+def binary_model_trainer(training_array_path, n_cvfolds, n_img, cv_order):
+    with open(training_array_path, 'rb') as f:
+        print('---------------------Training file name: ', training_array_path)
+        training_temp = pickle.load(f)
+    train_y = []
+    train_X = []
+    mark_count = 0
+    for mark, samps in training_temp.items():
+        for im_samps in samps:
+            train_X.append(im_samps)
+            if mark == 'None':
+                train_y.append(0)
+            else:
+                train_y.append(1)
+        mark_count += 1
+    train_X = np.array(train_X)
+    train_y = np.array(train_y, dtype=int)
+    for cvind in range(n_cvfolds):
+        nims_fold = int(len(train_X) / n_cvfolds)
+        foldinds = cv_order[cvind * nims_fold:(cvind + 1) * nims_fold]
+        tr = []
+        tr_labs = []
+        for im_ind in range(len(train_X)):
+            if im_ind in foldinds:
+                continue
+            tr.extend(train_X[im_ind])
+            tr_labs.extend([train_y[im_ind], ] * len(train_X[im_ind]))
+        tr = np.array(tr)
+        tr_labs = np.array(tr_labs, dtype=int)
+        tr = np.expand_dims(tr, axis=2)
+        print('tr shape:', tr.shape)
+        model = binary_model_init(tr)
+        history = model.fit(tr, tr_labs, epochs=10, verbose=0)
+        # save the model
+        # tf.contrib.saved_model.save_keras_model(model, args.model_dir)
+        model.save(os.path.join(model_path, 'binarynet_' + str(cvind) + '.h5'))
+        with open(os.path.join(model_path, 'binaryhist_' + str(cvind) + '.h5'), 'wb') as f:
+            pickle.dump(history.history, f)
     print('Training complete.')
     
 
@@ -163,31 +178,31 @@ def train():
     print('Starting the training.')
     # -----------------------------------
     # These are constants for now
-    mark_list = ['3,5H10', '1,6H', 'None', '6,2H', '4n,2n,2H']
     n_img = 30  # Number of images per mark for training
+    n_class = 5 # Number of classes
     stepsize = 10  # step size for second derivative convolution
     avg_window = 20  # window size for moving average convolution
     pdir = 'TrainingSamples'  # Directory of training samples
     xz = np.linspace(0, 799, 800)  # linear array with length of samples
     inds = np.linspace(0, 150, 151, dtype=int) * 5  # Indexes of values to save from samples
     # Set the cross val order:
-    cv_order = np.linspace(0, n_img * len(mark_list) -1, n_img * len(mark_list), dtype=int)
+    cv_order = np.linspace(0, n_img * n_class -1, n_img * n_class, dtype=int)
     np.random.shuffle(cv_order)
     print("cv order:", cv_order)
     try:
         # Read in any hyperparameters that the user passed with the training job
         with open(param_path, 'r') as tc:
             trainingParams = json.load(tc)
-
-        # Take the set of files and read them all into a single pandas dataframe
-        input_files = [ os.path.join(training_path, file) for file in os.listdir(training_path) ]
+        input_files = os.listdir(training_path)
         if len(input_files) == 0:
             raise ValueError(('There are no files in {}.\n' +
                               'This usually indicates that the channel ({}) was incorrectly specified,\n' +
                               'the data specification in S3 was incorrectly specified or the role specified\n' +
                               'does not have permission to access the data.').format(training_path, channel_name))
-        classification_model_trainer(input_files, mark_list, n_img)
-        binary_model_trainer(input_files, mark_list, n_img)
+        cl_tr_path = os.path.join(training_path, 'publication_classification_training_array.p')
+        classification_model_trainer(cl_tr_path, n_cvfolds, n_img, cv_order)
+        bi_tr_path = os.path.join(training_path, 'publication_binary_training_array.p')
+        binary_model_trainer(bi_tr_path, n_cvfolds, n_img, cv_order)
         print('Training complete.')
     except Exception as e:
         # Write out an error file. This will be returned as the failureReason in the
