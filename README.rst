@@ -16,7 +16,7 @@ Steps to running a cross validation test:
 
 4.) Generate and train classification and binary models using the
 InternalTransferNetworkTraining/InternalTransferNetwork-TrainingCrossVal.ipynb notebook on AWS Sagemaker. The notebook calls the
-InternalTransferNetworkTraining/TransferNetworkTraining.py module.
+InternalTransferNetworkTraining/TransferNetworkTraining.py module and references files stored in AWS S3. The file paths may need to be updated to match the users AWS S3 file directory.
 
 5.) Download the models from S3
 
